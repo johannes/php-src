@@ -1,0 +1,3 @@
+[submodule "sapi/pconn"]
+	path = sapi/pconn
+	url = git@github.com:johannes/pconn-sapi.git
