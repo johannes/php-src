@@ -30,6 +30,7 @@ provider php {
 	probe execute__return(char* request_file, int lineno);
 	probe function__entry(char* function_name, char* request_file, int lineno, char* classname, char* scope);
 	probe function__return(char* function_name, char* request_file, int lineno, char* classname, char* scope);
+	probe zval__addref(void* zv, long refcount, long isref);
 };
 
 /*#pragma D attributes Private/Private/Unknown provider php module

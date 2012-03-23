@@ -272,6 +272,10 @@ static const char long_min_digits[] = "9223372036854775808";
 #include "zend_ts_hash.h"
 #include "zend_llist.h"
 
+#ifdef HAVE_DTRACE
+#include "Zend/zend_dtrace_gen.h"
+#endif
+
 #define INTERNAL_FUNCTION_PARAMETERS int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC
 #define INTERNAL_FUNCTION_PARAM_PASSTHRU ht, return_value, return_value_ptr, this_ptr, return_value_used TSRMLS_CC
 
@@ -384,6 +388,11 @@ static zend_always_inline zend_uint zval_set_refcount_p(zval* pz, zend_uint rc) 
 }
 
 static zend_always_inline zend_uint zval_addref_p(zval* pz) {
+#ifdef HAVE_DTRACE
+	if (DTRACE_ZVAL_ADDREF_ENABLED()) {
+		zend_dtrace_zval_addref((void*)pz, pz->refcount__gc+1, pz->is_ref__gc);
+	}
+#endif
 	return ++pz->refcount__gc;
 }
 

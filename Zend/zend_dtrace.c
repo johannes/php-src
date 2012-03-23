@@ -103,6 +103,11 @@ ZEND_API void dtrace_execute_internal(zend_execute_data *execute_data_ptr, int r
 	}
 }
 
+ZEND_API void zend_dtrace_zval_addref(void *pz, long refcount, long is_ref)
+{
+	DTRACE_ZVAL_ADDREF(pz, refcount, is_ref); 
+}
+
 /* }}} */
 #endif /* HAVE_DTRACE */
 
