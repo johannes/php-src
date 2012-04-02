@@ -36,6 +36,11 @@
 #endif
 #include "zend_exceptions.h"
 
+#if defined(PDO_USE_MYSQLND) && defined(MYSQLI_USE_MYSQLND)
+#include "ext/mysqli/php_mysqli_structs.h"
+#include "ext/mysqli/mysqli_priv.h"
+#endif
+
 #if defined(PDO_USE_MYSQLND)
 #	define pdo_mysql_init(persistent) mysqlnd_init(persistent)
 #else
@@ -509,6 +514,46 @@ static int pdo_mysql_check_liveness(pdo_dbh_t *dbh TSRMLS_DC)
 } 
 /* }}} */
 
+#if defined(PDO_USE_MYSQLND) && defined(MYSQLI_USE_MYSQLND)
+PHP_METHOD(MySQL, toMySQLi)
+{
+	MYSQLI_RESOURCE *mysqli_resource;
+	MY_MYSQL *mysql;
+
+	pdo_dbh_t *dbh = zend_object_store_get_object(getThis() TSRMLS_CC);
+	pdo_mysql_db_handle *H = (pdo_mysql_db_handle *)dbh->driver_data;
+
+	mysql = (MY_MYSQL *)ecalloc(1, sizeof(MY_MYSQL));
+	mysql->mysql = H->server;
+	mysql->mysql->data->refcount++;
+
+	mysql->persistent = 0;
+
+	mysqli_resource = (MYSQLI_RESOURCE *)ecalloc (1, sizeof(MYSQLI_RESOURCE));
+	mysqli_resource->ptr = (void *)mysql;
+	mysqli_resource->status = MYSQLI_STATUS_VALID;
+
+	MYSQLI_RETURN_RESOURCE(mysqli_resource, mysqli_link_class_entry);
+}
+
+static const zend_function_entry dbh_methods[] = {
+	PHP_ME(MySQL, toMySQLi, NULL, ZEND_ACC_PUBLIC)
+	{NULL, NULL, NULL}
+};
+
+/* {{{ pdo_mysql_get_driver_methods */
+static const zend_function_entry *pdo_mysql_get_driver_methods(pdo_dbh_t *dbh, int kind TSRMLS_DC)
+{
+	switch (kind) {
+		case PDO_DBH_DRIVER_METHOD_KIND_DBH:
+			return dbh_methods;
+		default:
+			return NULL;
+	}
+}
+/* }}} */
+#endif
+
 /* {{{ mysql_methods */
 static struct pdo_dbh_methods mysql_methods = {
 	mysql_handle_closer,
@@ -522,7 +567,10 @@ static struct pdo_dbh_methods mysql_methods = {
 	pdo_mysql_last_insert_id,
 	pdo_mysql_fetch_error_func,
 	pdo_mysql_get_attribute,
-	pdo_mysql_check_liveness
+	pdo_mysql_check_liveness,
+#if defined(PDO_USE_MYSQLND) && defined(MYSQLI_USE_MYSQLND)
+	pdo_mysql_get_driver_methods
+#endif
 };
 /* }}} */
 
