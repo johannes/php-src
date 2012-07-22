@@ -85,6 +85,7 @@ struct _zend_module_entry {
 	int (*request_shutdown_func)(SHUTDOWN_FUNC_ARGS);
 	void (*info_func)(ZEND_MODULE_INFO_FUNC_ARGS);
 	const char *version;
+	char *credits_line;
 	size_t globals_size;
 #ifdef ZTS
 	ts_rsrc_id* globals_id_ptr;

@@ -1326,6 +1326,13 @@ PHP_FUNCTION(php_ini_loaded_file)
 }
 /* }}} */
 
+PHPAPI void php_info_credits(zend_module_entry *zend_module)
+{
+	php_info_print_table_start();
+	php_info_print_table_row(2, "Credits", zend_module->credits_line);
+	php_info_print_table_end();
+}
+
 /*
  * Local variables:
  * tab-width: 4

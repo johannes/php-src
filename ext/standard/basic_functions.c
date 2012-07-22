@@ -3399,6 +3399,7 @@ zend_module_entry basic_functions_module = { /* {{{ */
 	PHP_RSHUTDOWN(basic),		/* request shutdown */
 	PHP_MINFO(basic),			/* extension info */
 	PHP_VERSION,				/* extension version */
+	"Perry Rhodan, Luke Skywalker, James T. Kirk",
 	STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
@@ -3826,6 +3827,7 @@ PHP_MINFO_FUNCTION(basic) /* {{{ */
 	BASIC_MINFO_SUBMODULE(mail)
 	php_info_print_table_end();
 	BASIC_MINFO_SUBMODULE(assert)
+	php_info_credits(zend_module);
 }
 /* }}} */
 
