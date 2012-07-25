@@ -208,7 +208,10 @@ static int getSingletonPos(char* str)
    Get default locale */
 PHP_NAMED_FUNCTION(zif_locale_get_default)
 {
-	RETURN_STRING( intl_locale_get_default( TSRMLS_C ), TRUE );
+	if( INTL_G(default_locale) == NULL ) {
+		INTL_G(default_locale) = pestrdup( uloc_getDefault(), 1);
+ 	}
+	RETURN_STRING( INTL_G(default_locale), TRUE );
 }
 
 /* }}} */
@@ -390,7 +393,7 @@ static void get_icu_value_src_php( char* tag_name, INTERNAL_FUNCTION_PARAMETERS)
     }
 
 	if(loc_name_len == 0) {
-		loc_name = intl_locale_get_default(TSRMLS_C);
+		loc_name = INTL_G(default_locale);
 	}
 
 	/* Call ICU get */
@@ -496,7 +499,7 @@ static void get_icu_disp_value_src_php( char* tag_name, INTERNAL_FUNCTION_PARAME
 	}
 
 	if(loc_name_len == 0) {
-		loc_name = intl_locale_get_default(TSRMLS_C);
+	loc_name = INTL_G(default_locale);
 	}
 
 	if( strcmp(tag_name, DISP_NAME) != 0 ){
@@ -518,7 +521,7 @@ static void get_icu_disp_value_src_php( char* tag_name, INTERNAL_FUNCTION_PARAME
 	
 	/* Check if disp_loc_name passed , if not use default locale */
 	if( !disp_loc_name){
-		disp_loc_name = estrdup(intl_locale_get_default(TSRMLS_C));
+		disp_loc_name = estrdup(INTL_G(default_locale));
 		free_loc_name = 1;
 	}
 
@@ -690,7 +693,7 @@ PHP_FUNCTION( locale_get_keywords )
     }
 
     if(loc_name_len == 0) {
-        loc_name = intl_locale_get_default(TSRMLS_C);
+        loc_name = INTL_G(default_locale);
     }
 
 	/* Get the keywords */
@@ -1097,7 +1100,7 @@ PHP_FUNCTION(locale_parse)
     }
 
     if(loc_name_len == 0) {
-        loc_name = intl_locale_get_default(TSRMLS_C);
+        loc_name = INTL_G(default_locale);
     }
 
 	array_init( return_value );
@@ -1145,7 +1148,7 @@ PHP_FUNCTION(locale_get_all_variants)
 	}
 
 	if(loc_name_len == 0) {
-		loc_name = intl_locale_get_default(TSRMLS_C);
+		loc_name = INTL_G(default_locale);
 	}
 
 
@@ -1251,7 +1254,7 @@ PHP_FUNCTION(locale_filter_matches)
 	}
 
 	if(loc_range_len == 0) {
-		loc_range = intl_locale_get_default(TSRMLS_C);
+		loc_range = INTL_G(default_locale);
 	}
 
 	if( strcmp(loc_range,"*")==0){
@@ -1537,7 +1540,7 @@ PHP_FUNCTION(locale_lookup)
 	}
 
 	if(loc_range_len == 0) {
-		loc_range = intl_locale_get_default(TSRMLS_C);
+		loc_range = INTL_G(default_locale);
 	}
 
 	hash_arr = HASH_OF(arr);

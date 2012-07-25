@@ -1,12 +1,11 @@
 #include "config.w32.h"
+#if (_WIN32_WINNT < 0x0600) /* Vista/2k8 have these functions */
 #include "php.h"
 #include <winsock2.h>
 #include <windows.h>
 #include <Ws2tcpip.h>
 
 #include "inet.h"
-#if (_WIN32_WINNT < 0x0600) /* Vista/2k8 have these functions */
-
 
 PHPAPI int inet_pton(int af, const char* src, void* dst)
 {
@@ -77,8 +76,6 @@ PHPAPI const char* inet_ntop(int af, const void* src, char* dst, size_t size)
 	return NULL;
 }
 
-#endif
-
 int inet_aton(const char *cp, struct in_addr *inp) {
   inp->s_addr = inet_addr(cp);
 
@@ -88,3 +85,4 @@ int inet_aton(const char *cp, struct in_addr *inp) {
 
   return 1;
 }
+#endif

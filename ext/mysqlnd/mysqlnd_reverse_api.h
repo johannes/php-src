@@ -47,3 +47,4 @@ PHPAPI MYSQLND * zval_to_mysqlnd(zval * zv TSRMLS_DC);
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
+

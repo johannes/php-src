@@ -880,6 +880,7 @@ static int sapi_cgi_activate(TSRMLS_D)
 			} else {
 				doc_root = getenv("DOCUMENT_ROOT");
 			}
+
 			/* DOCUMENT_ROOT should also be defined at this stage..but better check it anyway */
 			if (doc_root) {
 				doc_root_len = strlen(doc_root);

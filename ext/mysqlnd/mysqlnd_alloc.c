@@ -65,8 +65,8 @@ const char * mysqlnd_debug_std_no_trace_funcs[] =
 
 #if ZEND_DEBUG
 #else
-#define __zend_orig_filename "/unknown/unknown"
-#define __zend_orig_lineno   0
+#define __zend_filename "/unknown/unknown"
+#define __zend_lineno   0
 #endif
 
 #define REAL_SIZE(s) (collect_memory_statistics? (s) + sizeof(size_t) : (s))
@@ -81,15 +81,15 @@ void * _mysqlnd_emalloc(size_t size MYSQLND_MEM_D)
 #if PHP_DEBUG
 	long * threshold = &MYSQLND_G(debug_emalloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_emalloc_name);
+	DBG_ENTER(mysqlnd_emalloc_name);
 
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
 	if (*threshold) {
 #endif
-		ret = _emalloc(REAL_SIZE(size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+		ret = emalloc(REAL_SIZE(size));
 #if PHP_DEBUG
 		--*threshold;
 	} else if (*threshold == 0) {
@@ -97,13 +97,13 @@ void * _mysqlnd_emalloc(size_t size MYSQLND_MEM_D)
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("size=%lu ptr=%p", size, ret);
+	DBG_INF_FMT("size=%lu ptr=%p", size, ret);
 
 	if (ret && collect_memory_statistics) {
 		*(size_t *) ret = size;
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_EMALLOC_COUNT, 1, STAT_MEM_EMALLOC_AMOUNT, size);
 	}
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -116,15 +116,14 @@ void * _mysqlnd_pemalloc(size_t size, zend_bool persistent MYSQLND_MEM_D)
 #if PHP_DEBUG
 	long * threshold = persistent? &MYSQLND_G(debug_malloc_fail_threshold):&MYSQLND_G(debug_emalloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_pemalloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d    persistent=%u",
-						strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno,persistent);
+	DBG_ENTER(mysqlnd_pemalloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
 	if (*threshold) {
 #endif
-		ret = (persistent) ? __zend_malloc(REAL_SIZE(size)) : _emalloc(REAL_SIZE(size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+		ret = pemalloc(REAL_SIZE(size), persistent);
 #if PHP_DEBUG
 		--*threshold;
 	} else if (*threshold == 0) {
@@ -132,7 +131,7 @@ void * _mysqlnd_pemalloc(size_t size, zend_bool persistent MYSQLND_MEM_D)
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("size=%lu ptr=%p persistent=%u", size, ret, persistent);
+	DBG_INF_FMT("size=%lu ptr=%p persistent=%u", size, ret, persistent);
 
 	if (ret && collect_memory_statistics) {
 		enum mysqlnd_collected_stats s1 = persistent? STAT_MEM_MALLOC_COUNT:STAT_MEM_EMALLOC_COUNT;
@@ -141,7 +140,7 @@ void * _mysqlnd_pemalloc(size_t size, zend_bool persistent MYSQLND_MEM_D)
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(s1, 1, s2, size);
 	}
 
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -154,15 +153,15 @@ void * _mysqlnd_ecalloc(unsigned int nmemb, size_t size MYSQLND_MEM_D)
 #if PHP_DEBUG
 	long * threshold = &MYSQLND_G(debug_ecalloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_ecalloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("before: %lu", zend_memory_usage(FALSE TSRMLS_CC));
+	DBG_ENTER(mysqlnd_ecalloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("before: %lu", zend_memory_usage(FALSE TSRMLS_CC));
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
 	if (*threshold) {
 #endif
-		ret = _ecalloc(nmemb, REAL_SIZE(size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+		ret = ecalloc(nmemb, REAL_SIZE(size));
 #if PHP_DEBUG
 		--*threshold;
 	} else if (*threshold == 0) {
@@ -170,13 +169,13 @@ void * _mysqlnd_ecalloc(unsigned int nmemb, size_t size MYSQLND_MEM_D)
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("after : %lu", zend_memory_usage(FALSE TSRMLS_CC));
-	TRACE_ALLOC_INF_FMT("size=%lu ptr=%p", size, ret);
+	DBG_INF_FMT("after : %lu", zend_memory_usage(FALSE TSRMLS_CC));
+	DBG_INF_FMT("size=%lu ptr=%p", size, ret);
 	if (ret && collect_memory_statistics) {
 		*(size_t *) ret = size;
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_ECALLOC_COUNT, 1, STAT_MEM_ECALLOC_AMOUNT, size);
 	}
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -189,15 +188,14 @@ void * _mysqlnd_pecalloc(unsigned int nmemb, size_t size, zend_bool persistent M
 #if PHP_DEBUG
 	long * threshold = persistent? &MYSQLND_G(debug_calloc_fail_threshold):&MYSQLND_G(debug_ecalloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_pecalloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d    persistent=%u",
-						strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno, persistent);
+	DBG_ENTER(mysqlnd_pecalloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
 	if (*threshold) {
 #endif
-		ret = (persistent) ? __zend_calloc(nmemb, REAL_SIZE(size)) : _ecalloc(nmemb, REAL_SIZE(size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+		ret = pecalloc(nmemb, REAL_SIZE(size), persistent);
 #if PHP_DEBUG
 		--*threshold;
 	} else if (*threshold == 0) {
@@ -205,7 +203,7 @@ void * _mysqlnd_pecalloc(unsigned int nmemb, size_t size, zend_bool persistent M
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("size=%lu ptr=%p", size, ret);
+	DBG_INF_FMT("size=%lu ptr=%p", size, ret);
 
 	if (ret && collect_memory_statistics) {
 		enum mysqlnd_collected_stats s1 = persistent? STAT_MEM_CALLOC_COUNT:STAT_MEM_ECALLOC_COUNT;
@@ -214,7 +212,7 @@ void * _mysqlnd_pecalloc(unsigned int nmemb, size_t size, zend_bool persistent M
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(s1, 1, s2, size);
 	}
 
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -228,15 +226,15 @@ void * _mysqlnd_erealloc(void *ptr, size_t new_size MYSQLND_MEM_D)
 #if PHP_DEBUG
 	long * threshold = &MYSQLND_G(debug_erealloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_erealloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p old_size=%lu, new_size=%lu", ptr, old_size, new_size); 
+	DBG_ENTER(mysqlnd_erealloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p old_size=%lu, new_size=%lu", ptr, old_size, new_size); 
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
 	if (*threshold) {
 #endif
-		ret = _erealloc(REAL_PTR(ptr), REAL_SIZE(new_size), 0 ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+		ret = erealloc(REAL_PTR(ptr), REAL_SIZE(new_size));
 #if PHP_DEBUG
 		--*threshold;
 	} else if (*threshold == 0) {
@@ -244,12 +242,12 @@ void * _mysqlnd_erealloc(void *ptr, size_t new_size MYSQLND_MEM_D)
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("new_ptr=%p", (char*)ret);
+	DBG_INF_FMT("new_ptr=%p", (char*)ret);
 	if (ret && collect_memory_statistics) {
 		*(size_t *) ret = new_size;
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_EREALLOC_COUNT, 1, STAT_MEM_EREALLOC_AMOUNT, new_size);
 	}
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -263,9 +261,9 @@ void * _mysqlnd_perealloc(void *ptr, size_t new_size, zend_bool persistent MYSQL
 #if PHP_DEBUG
 	long * threshold = persistent? &MYSQLND_G(debug_realloc_fail_threshold):&MYSQLND_G(debug_erealloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_perealloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p old_size=%lu new_size=%lu   persistent=%u", ptr, old_size, new_size, persistent); 
+	DBG_ENTER(mysqlnd_perealloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p old_size=%lu new_size=%lu persistent=%u", ptr, old_size, new_size, persistent); 
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
@@ -279,7 +277,7 @@ void * _mysqlnd_perealloc(void *ptr, size_t new_size, zend_bool persistent MYSQL
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("new_ptr=%p", (char*)ret);
+	DBG_INF_FMT("new_ptr=%p", (char*)ret);
 
 	if (ret && collect_memory_statistics) {
 		enum mysqlnd_collected_stats s1 = persistent? STAT_MEM_REALLOC_COUNT:STAT_MEM_EREALLOC_COUNT;
@@ -287,7 +285,7 @@ void * _mysqlnd_perealloc(void *ptr, size_t new_size, zend_bool persistent MYSQL
 		*(size_t *) ret = new_size;
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(s1, 1, s2, new_size);
 	}
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -297,22 +295,22 @@ void _mysqlnd_efree(void *ptr MYSQLND_MEM_D)
 {
 	size_t free_amount = 0;
 	zend_bool collect_memory_statistics = MYSQLND_G(collect_memory_statistics);
-	TRACE_ALLOC_ENTER(mysqlnd_efree_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p", ptr); 
+	DBG_ENTER(mysqlnd_efree_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p", ptr); 
 
 	if (ptr) {
 		if (collect_memory_statistics) {
 			free_amount = *(size_t *)(((char*)ptr) - sizeof(size_t));
-			TRACE_ALLOC_INF_FMT("ptr=%p size=%u", ((char*)ptr) - sizeof(size_t), (unsigned int) free_amount);
+			DBG_INF_FMT("ptr=%p size=%u", ((char*)ptr) - sizeof(size_t), (unsigned int) free_amount);
 		}
-		_efree(REAL_PTR(ptr) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+		efree(REAL_PTR(ptr));
 	}
 
 	if (collect_memory_statistics) {
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_EFREE_COUNT, 1, STAT_MEM_EFREE_AMOUNT, free_amount);
 	}
-	TRACE_ALLOC_VOID_RETURN;
+	DBG_VOID_RETURN;
 }
 /* }}} */
 
@@ -322,25 +320,24 @@ void _mysqlnd_pefree(void *ptr, zend_bool persistent MYSQLND_MEM_D)
 {
 	size_t free_amount = 0;
 	zend_bool collect_memory_statistics = MYSQLND_G(collect_memory_statistics);
-	TRACE_ALLOC_ENTER(mysqlnd_pefree_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p persistent=%u", ptr, persistent); 
+	DBG_ENTER(mysqlnd_pefree_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p persistent=%u", ptr, persistent); 
 
 	if (ptr) {
 		if (collect_memory_statistics) {
 			free_amount = *(size_t *)(((char*)ptr) - sizeof(size_t));
-			TRACE_ALLOC_INF_FMT("ptr=%p size=%u", ((char*)ptr) - sizeof(size_t), (unsigned int) free_amount);
+			DBG_INF_FMT("ptr=%p size=%u", ((char*)ptr) - sizeof(size_t), (unsigned int) free_amount);
 		}
-		(persistent) ? free(REAL_PTR(ptr)) : _efree(REAL_PTR(ptr) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+		pefree(REAL_PTR(ptr), persistent);
 	}
 
 	if (collect_memory_statistics) {
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(persistent? STAT_MEM_FREE_COUNT:STAT_MEM_EFREE_COUNT, 1,
 											  persistent? STAT_MEM_FREE_AMOUNT:STAT_MEM_EFREE_AMOUNT, free_amount);
 	}
-	TRACE_ALLOC_VOID_RETURN;
+	DBG_VOID_RETURN;
 }
-/* }}} */
 
 
 /* {{{ _mysqlnd_malloc */
@@ -351,8 +348,8 @@ void * _mysqlnd_malloc(size_t size MYSQLND_MEM_D)
 #if PHP_DEBUG
 	long * threshold = &MYSQLND_G(debug_malloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_malloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
+	DBG_ENTER(mysqlnd_malloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
@@ -366,12 +363,12 @@ void * _mysqlnd_malloc(size_t size MYSQLND_MEM_D)
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("size=%lu ptr=%p", size, ret);
+	DBG_INF_FMT("size=%lu ptr=%p", size, ret);
 	if (ret && collect_memory_statistics) {
 		*(size_t *) ret = size;
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_MALLOC_COUNT, 1, STAT_MEM_MALLOC_AMOUNT, size);
 	}
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -384,8 +381,8 @@ void * _mysqlnd_calloc(unsigned int nmemb, size_t size MYSQLND_MEM_D)
 #if PHP_DEBUG
 	long * threshold = &MYSQLND_G(debug_calloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_calloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
+	DBG_ENTER(mysqlnd_calloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
@@ -399,12 +396,12 @@ void * _mysqlnd_calloc(unsigned int nmemb, size_t size MYSQLND_MEM_D)
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("size=%lu ptr=%p", size, ret);
+	DBG_INF_FMT("size=%lu ptr=%p", size, ret);
 	if (ret && collect_memory_statistics) {
 		*(size_t *) ret = size;
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_CALLOC_COUNT, 1, STAT_MEM_CALLOC_AMOUNT, size);
 	}
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -417,10 +414,10 @@ void * _mysqlnd_realloc(void *ptr, size_t new_size MYSQLND_MEM_D)
 #if PHP_DEBUG
 	long * threshold = &MYSQLND_G(debug_realloc_fail_threshold);
 #endif
-	TRACE_ALLOC_ENTER(mysqlnd_realloc_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p new_size=%lu ", new_size, ptr); 
-	TRACE_ALLOC_INF_FMT("before: %lu", zend_memory_usage(TRUE TSRMLS_CC));
+	DBG_ENTER(mysqlnd_realloc_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p new_size=%lu ", new_size, ptr); 
+	DBG_INF_FMT("before: %lu", zend_memory_usage(TRUE TSRMLS_CC));
 
 #if PHP_DEBUG
 	/* -1 is also "true" */
@@ -434,13 +431,13 @@ void * _mysqlnd_realloc(void *ptr, size_t new_size MYSQLND_MEM_D)
 	}
 #endif
 
-	TRACE_ALLOC_INF_FMT("new_ptr=%p", (char*)ret);
+	DBG_INF_FMT("new_ptr=%p", (char*)ret);
 
 	if (ret && collect_memory_statistics) {
 		*(size_t *) ret = new_size;
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_REALLOC_COUNT, 1, STAT_MEM_REALLOC_AMOUNT, new_size);
 	}
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -450,14 +447,14 @@ void _mysqlnd_free(void *ptr MYSQLND_MEM_D)
 {
 	size_t free_amount = 0;
 	zend_bool collect_memory_statistics = MYSQLND_G(collect_memory_statistics);
-	TRACE_ALLOC_ENTER(mysqlnd_free_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p", ptr); 
+	DBG_ENTER(mysqlnd_free_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p", ptr); 
 
 	if (ptr) {
 		if (collect_memory_statistics) {
 			free_amount = *(size_t *)(((char*)ptr) - sizeof(size_t));
-			TRACE_ALLOC_INF_FMT("ptr=%p size=%u", ((char*)ptr) - sizeof(size_t), (unsigned int) free_amount);
+			DBG_INF_FMT("ptr=%p size=%u", ((char*)ptr) - sizeof(size_t), (unsigned int) free_amount);
 		}
 		free(REAL_PTR(ptr));
 	}
@@ -465,7 +462,7 @@ void _mysqlnd_free(void *ptr MYSQLND_MEM_D)
 	if (collect_memory_statistics) {
 		MYSQLND_INC_GLOBAL_STATISTIC_W_VALUE2(STAT_MEM_FREE_COUNT, 1, STAT_MEM_FREE_AMOUNT, free_amount);
 	}
-	TRACE_ALLOC_VOID_RETURN;
+	DBG_VOID_RETURN;
 }
 /* }}} */
 
@@ -479,11 +476,11 @@ char * _mysqlnd_pestrndup(const char * const ptr, size_t length, zend_bool persi
 {
 	char * ret;
 	zend_bool collect_memory_statistics = MYSQLND_G(collect_memory_statistics);
-	TRACE_ALLOC_ENTER(mysqlnd_pestrndup_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p", ptr); 
+	DBG_ENTER(mysqlnd_pestrndup_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p", ptr); 
 
-	ret = (persistent) ? __zend_malloc(REAL_SIZE(length + 1)) : _emalloc(REAL_SIZE(length + 1) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+	ret = pemalloc(REAL_SIZE(length) + 1, persistent);
 	{
 		size_t l = length;
 		char * p = (char *) ptr;
@@ -499,7 +496,7 @@ char * _mysqlnd_pestrndup(const char * const ptr, size_t length, zend_bool persi
 		MYSQLND_INC_GLOBAL_STATISTIC(persistent? STAT_MEM_STRNDUP_COUNT : STAT_MEM_ESTRNDUP_COUNT);
 	}
 
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -511,14 +508,14 @@ char * _mysqlnd_pestrdup(const char * const ptr, zend_bool persistent MYSQLND_ME
 	smart_str tmp_str = {0, 0, 0};
 	const char * p = ptr;
 	zend_bool collect_memory_statistics = MYSQLND_G(collect_memory_statistics);
-	TRACE_ALLOC_ENTER(mysqlnd_pestrdup_name);
-	TRACE_ALLOC_INF_FMT("file=%-15s line=%4d", strrchr(__zend_orig_filename, PHP_DIR_SEPARATOR) + 1, __zend_orig_lineno);
-	TRACE_ALLOC_INF_FMT("ptr=%p", ptr);
+	DBG_ENTER(mysqlnd_pestrdup_name);
+	DBG_INF_FMT("file=%-15s line=%4d", strrchr(__zend_filename, PHP_DIR_SEPARATOR) + 1, __zend_lineno);
+	DBG_INF_FMT("ptr=%p", ptr);
 	do {
 		smart_str_appendc(&tmp_str, *p);
 	} while (*p++);
 
-	ret = (persistent) ? __zend_malloc(tmp_str.len + sizeof(size_t)) : _emalloc(REAL_SIZE(tmp_str.len + sizeof(size_t)) ZEND_FILE_LINE_CC ZEND_FILE_LINE_ORIG_RELAY_CC);
+	ret = pemalloc(tmp_str.len + sizeof(size_t), persistent);
 	memcpy(FAKE_PTR(ret), tmp_str.c, tmp_str.len);
 
 	if (ret && collect_memory_statistics) {
@@ -527,7 +524,7 @@ char * _mysqlnd_pestrdup(const char * const ptr, zend_bool persistent MYSQLND_ME
 	}
 	smart_str_free(&tmp_str);
 
-	TRACE_ALLOC_RETURN(FAKE_PTR(ret));
+	DBG_RETURN(FAKE_PTR(ret));
 }
 /* }}} */
 
@@ -552,7 +549,7 @@ PHPAPI void _mysqlnd_sprintf_free(char * p)
 }
 /* }}} */
 
-/* {{{ _mysqlnd_vsprintf */
+
 PHPAPI int _mysqlnd_vsprintf(char ** pbuf, size_t max_len, const char * format, va_list ap)
 {
 	return vspprintf(pbuf, max_len, format, ap);

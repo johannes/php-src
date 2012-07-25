@@ -61,7 +61,7 @@ static void msgfmt_ctor(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	if(locale_len == 0) {
-		locale = intl_locale_get_default(TSRMLS_C);
+		locale = INTL_G(default_locale);
 	}
 
 #ifdef MSG_FORMAT_QUOTE_APOS

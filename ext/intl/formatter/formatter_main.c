@@ -56,7 +56,7 @@ static void numfmt_ctor(INTERNAL_FUNCTION_PARAMETERS)
 	}
 
 	if(locale_len == 0) {
-		locale = intl_locale_get_default(TSRMLS_C);
+		locale = INTL_G(default_locale);
 	}
 
 	/* Create an ICU number formatter. */
