@@ -1108,11 +1108,11 @@ static int php_snmp_parse_oid(zval *object, int st, struct objid_query *objid_qu
 /* {{{ netsnmp_session_init
 	allocates memory for session and session->peername, caller should free it manually using netsnmp_session_free() and efree()
 */
-static int netsnmp_session_init(php_snmp_session **session_p, int version, char *hostname, char *community, int timeout, int retries TSRMLS_DC)
+static int netsnmp_session_init(php_snmp_session **session_p, int version, char *hostname, int hostname_len, char *community, int community_len, int timeout, int retries TSRMLS_DC)
 {
 	php_snmp_session *session;
 	char *pptr;
-	char buf[MAX_NAME_LEN];
+	char *host;
 	int force_ipv6 = FALSE;
 	int n;
 	struct sockaddr **psal;
@@ -1126,7 +1126,7 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 	}
 	memset(session, 0, sizeof(php_snmp_session));
 
-	strlcpy(buf, hostname, sizeof(buf));
+	host = estrndup(hostname, hostname_len);
 
 	snmp_sess_init(session);
 
@@ -1141,10 +1141,10 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 	*(session->peername) = '\0';
 
 	/* Reading the hostname and its optional non-default port number */
-	if (*hostname == '[') { /* IPv6 address */
+	if (*host == '[') { /* IPv6 address */
 		force_ipv6 = TRUE;
-		hostname++;
-		if ((pptr = strchr(hostname, ']'))) {
+		host++;
+		if ((pptr = strchr(host, ']'))) {
 			if (pptr[1] == ':') {
 				session->remote_port = atoi(pptr + 2);
 			}
@@ -1154,7 +1154,7 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 			return (-1);
 		}
 	} else { /* IPv4 address */
-		if ((pptr = strchr(hostname, ':'))) {
+		if ((pptr = strchr(host, ':'))) {
 			session->remote_port = atoi(pptr + 1);
 			*pptr = '\0';
 		}
@@ -1162,7 +1162,7 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 
 	/* since Net-SNMP library requires 'udp6:' prefix for all IPv6 addresses (in FQDN form too) we need to
 	   perform possible name resolution before running any SNMP queries */
-	if ((n = php_network_getaddresses(hostname, SOCK_DGRAM, &psal, NULL TSRMLS_CC)) == 0) { /* some resover error */
+	if ((n = php_network_getaddresses(host, SOCK_DGRAM, &psal, NULL TSRMLS_CC)) == 0) { /* some resover error */
 		/* warnings sent, bailing out */
 		return (-1);
 	}
@@ -1196,9 +1196,12 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 	}
 
 	if (strlen(session->peername) == 0) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unknown failure while resolving '%s'", buf);
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unknown failure while resolving '%s'", host);
 		return (-1);
 	}
+
+	efree(host);
+
 	/* XXX FIXME
 		There should be check for non-empty session->peername!
 	*/
@@ -1213,12 +1216,12 @@ static int netsnmp_session_init(php_snmp_session **session_p, int version, char 
 
 	if (version == SNMP_VERSION_3) {
 		/* Setting the security name. */
-		session->securityName = estrdup(community);
-		session->securityNameLen = strlen(session->securityName);
+		session->securityName = estrndup(community, community_len);
+		session->securityNameLen = community_len;
 	} else {
 		session->authenticator = NULL;
-		session->community = (u_char *)estrdup(community);
-		session->community_len = strlen(community);
+		session->community = (u_char *)estrndup(community, community_len);
+		session->community_len = community_len;
 	}
 
 	session->retries = retries;
@@ -1490,7 +1493,7 @@ static void php_snmp(INTERNAL_FUNCTION_PARAMETERS, int st, int version)
 	}
 
 	if (session_less_mode) {
-		if (netsnmp_session_init(&session, version, a1, a2, timeout, retries TSRMLS_CC)) {
+		if (netsnmp_session_init(&session, version, a1, a1_len, a2, a2_len, timeout, retries TSRMLS_CC)) {
 			efree(objid_query.vars);
 			netsnmp_session_free(&session);
 			RETURN_FALSE;
@@ -1844,7 +1847,7 @@ PHP_METHOD(snmp, __construct)
 		netsnmp_session_free(&(snmp_object->session));
 	}
 	
-	if (netsnmp_session_init(&(snmp_object->session), version, a1, a2, timeout, retries TSRMLS_CC)) {
+	if (netsnmp_session_init(&(snmp_object->session), version, a1, a1_len, a2, a2_len, timeout, retries TSRMLS_CC)) {
 		return;
 	}
 	snmp_object->max_oids = 0;
