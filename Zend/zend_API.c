@@ -687,7 +687,10 @@ static int zend_parse_arg(int arg_num, zval **arg, va_list *va, const char **spe
 						class_name, space, get_active_function_name(TSRMLS_C), arg_num, expected_type,
 						zend_zval_type_name(*arg));
 			}
+		} else if (error) {
+			efree(error);
 		}
+
 		if (severity != E_STRICT) {
 			return FAILURE;
 		}
