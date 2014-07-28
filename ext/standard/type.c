@@ -134,27 +134,13 @@ PHP_FUNCTION(settype)
 PHP_FUNCTION(intval)
 {
 	zval **num;
-	long arg_base;
+	long arg_base = 10;
 	int base;
 
-	switch (ZEND_NUM_ARGS()) {
-		case 1:
-			if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Z", &num) == FAILURE) {
-				return;
-			}
-			base = 10;
-			break;
-
-		case 2:
-			if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Zl", &num, &arg_base) == FAILURE) {
-				return;
-			}
-			base = arg_base;
-			break;
-
-		default:
-			WRONG_PARAM_COUNT;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Z|l", &num, &arg_base) == FAILURE) {
+		return;
 	}
+	base = arg_base;
 
 	RETVAL_ZVAL(*num, 1, 0);
 	convert_to_long_base(return_value, base);
