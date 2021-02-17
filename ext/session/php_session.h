@@ -27,9 +27,9 @@
 
 /* save handler macros */
 #define PS_NUM_APIS      9
-#define PS_OPEN_ARGS     void **mod_data, const char *save_path, const char *session_name
+#define PS_OPEN_ARGS     void **mod_data, const char *save_path, const char *session_name, zend_bool lock_read_only
 #define PS_CLOSE_ARGS    void **mod_data
-#define PS_READ_ARGS     void **mod_data, zend_string *key, zend_string **val, zend_long maxlifetime
+#define PS_READ_ARGS     void **mod_data, zend_string *key, zend_string **val, zend_long maxlifetime, zend_bool lock_read_only
 #define PS_WRITE_ARGS    void **mod_data, zend_string *key, zend_string *val, zend_long maxlifetime
 #define PS_DESTROY_ARGS  void **mod_data, zend_string *key
 #define PS_GC_ARGS       void **mod_data, zend_long maxlifetime, zend_long *nrdels
@@ -260,7 +260,7 @@ PHPAPI int php_session_register_serializer(const char *name,
 	        zend_string *(*encode)(PS_SERIALIZER_ENCODE_ARGS),
 	        int (*decode)(PS_SERIALIZER_DECODE_ARGS));
 
-PHPAPI int php_session_start(void);
+PHPAPI int php_session_start(zend_bool read_only);
 PHPAPI int php_session_flush(int write);
 
 PHPAPI const ps_module *_php_find_ps_module(const char *name);

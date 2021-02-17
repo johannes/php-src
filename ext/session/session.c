@@ -378,7 +378,7 @@ static zend_long php_session_gc(bool immediate) /* {{{ */
 	return num;
 } /* }}} */
 
-static int php_session_initialize(void) /* {{{ */
+static int php_session_initialize(zend_bool read_only) /* {{{ */
 {
 	zend_string *val = NULL;
 
@@ -391,7 +391,7 @@ static int php_session_initialize(void) /* {{{ */
 	}
 
 	/* Open session handler first */
-	if (PS(mod)->s_open(&PS(mod_data), PS(save_path), PS(session_name)) == FAILURE
+	if (PS(mod)->s_open(&PS(mod_data), PS(save_path), PS(session_name), read_only) == FAILURE
 		/* || PS(mod_data) == NULL */ /* FIXME: open must set valid PS(mod_data) with success */
 	) {
 		php_session_abort();
@@ -439,7 +439,7 @@ static int php_session_initialize(void) /* {{{ */
 
 	/* Read data */
 	php_session_track_init();
-	if (PS(mod)->s_read(&PS(mod_data), PS(id), &val, PS(gc_maxlifetime)) == FAILURE) {
+	if (PS(mod)->s_read(&PS(mod_data), PS(id), &val, PS(gc_maxlifetime), read_only) == FAILURE) {
 		php_session_abort();
 		/* FYI: Some broken save handlers return FAILURE for non-existent session ID, this is incorrect */
 		if (!EG(exception)) {
@@ -1494,7 +1494,7 @@ PHPAPI int php_session_reset_id(void) /* {{{ */
 /* }}} */
 
 
-PHPAPI int php_session_start(void) /* {{{ */
+PHPAPI int hp_session_start(zend_bool read_only) /* {{{ */
 {
 	zval *ppid;
 	zval *data;
@@ -1604,7 +1604,7 @@ PHPAPI int php_session_start(void) /* {{{ */
 		PS(id) = NULL;
 	}
 
-	if (php_session_initialize() == FAILURE
+	if (php_session_initialize(read_only) == FAILURE
 		|| php_session_cache_limiter() == -2) {
 		PS(session_status) = php_session_none;
 		if (PS(id)) {
@@ -1644,7 +1644,7 @@ static int php_session_abort(void) /* {{{ */
 static int php_session_reset(void) /* {{{ */
 {
 	if (PS(session_status) == php_session_active
-		&& php_session_initialize() == SUCCESS) {
+		&& php_session_initialize(0) == SUCCESS) {
 		return SUCCESS;
 	}
 	return FAILURE;
@@ -2237,7 +2237,7 @@ PHP_FUNCTION(session_regenerate_id)
 	zend_string_release_ex(PS(id), 0);
 	PS(id) = NULL;
 
-	if (PS(mod)->s_open(&PS(mod_data), PS(save_path), PS(session_name)) == FAILURE) {
+	if (PS(mod)->s_open(&PS(mod_data), PS(save_path), PS(session_name), 0) == FAILURE) {
 		PS(session_status) = php_session_none;
 		if (!EG(exception)) {
 			zend_throw_error(NULL, "Failed to open session: %s (path: %s)", PS(mod)->s_name, PS(save_path));
@@ -2267,7 +2267,7 @@ PHP_FUNCTION(session_regenerate_id)
 		}
 	}
 	/* Read is required to make new session data at this point. */
-	if (PS(mod)->s_read(&PS(mod_data), PS(id), &data, PS(gc_maxlifetime)) == FAILURE) {
+	if (PS(mod)->s_read(&PS(mod_data), PS(id), &data, PS(gc_maxlifetime), 0) == FAILURE) {
 		PS(mod)->s_close(&PS(mod_data));
 		PS(session_status) = php_session_none;
 		if (!EG(exception)) {
@@ -2516,7 +2516,7 @@ PHP_FUNCTION(session_start)
 		} ZEND_HASH_FOREACH_END();
 	}
 
-	php_session_start();
+	php_session_start((zend_bool)read_and_close);
 
 	if (PS(session_status) != php_session_active) {
 		IF_SESSION_VARS() {
@@ -2715,7 +2715,7 @@ static int php_rinit_session(bool auto_start) /* {{{ */
 	}
 
 	if (auto_start) {
-		php_session_start();
+		php_session_start(0);
 	}
 
 	return SUCCESS;
@@ -2964,7 +2964,7 @@ static void php_session_rfc1867_update(php_session_rfc1867_progress *progress, i
 		progress->next_update = Z_LVAL_P(progress->post_bytes_processed) + progress->update_step;
 	}
 
-	php_session_initialize();
+	php_session_initialize(0);
 	PS(session_status) = php_session_active;
 	IF_SESSION_VARS() {
 		zval *sess_var = Z_REFVAL(PS(http_session_vars));
@@ -2979,7 +2979,7 @@ static void php_session_rfc1867_update(php_session_rfc1867_progress *progress, i
 
 static void php_session_rfc1867_cleanup(php_session_rfc1867_progress *progress) /* {{{ */
 {
-	php_session_initialize();
+	php_session_initialize(0);
 	PS(session_status) = php_session_active;
 	IF_SESSION_VARS() {
 		zval *sess_var = Z_REFVAL(PS(http_session_vars));

@@ -151,7 +151,7 @@ static void ps_files_close(ps_files *data)
 	}
 }
 
-static void ps_files_open(ps_files *data, const char *key)
+static void ps_files_open(ps_files *data, const char *key, zend_bool lock_read_only)
 {
 	char buf[MAXPATHLEN];
 #if !defined(O_NOFOLLOW) || !defined(PHP_WIN32)
@@ -209,7 +209,7 @@ static void ps_files_open(ps_files *data, const char *key)
 			}
 #endif
 			do {
-				ret = flock(data->fd, LOCK_EX);
+				ret = flock(data->fd, lock_read_only ? LOCK_SH : LOCK_EX);
 			} while (ret == -1 && errno == EINTR);
 
 #ifdef F_SETFD
@@ -233,7 +233,7 @@ static int ps_files_write(ps_files *data, zend_string *key, zend_string *val)
 	/* PS(id) may be changed by calling session_regenerate_id().
 	   Re-initialization should be tried here. ps_files_open() checks
        data->lastkey and reopen when it is needed. */
-	ps_files_open(data, ZSTR_VAL(key));
+	ps_files_open(data, ZSTR_VAL(key), 0);
 	if (data->fd < 0) {
 		return FAILURE;
 	}
@@ -476,7 +476,7 @@ PS_READ_FUNC(files)
 	zend_stat_t sbuf;
 	PS_FILES_DATA;
 
-	ps_files_open(data, ZSTR_VAL(key));
+	ps_files_open(data, ZSTR_VAL(key), lock_read_only);
 	if (data->fd < 0) {
 		return FAILURE;
 	}

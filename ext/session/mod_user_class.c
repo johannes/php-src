@@ -50,7 +50,7 @@ PHP_METHOD(SessionHandler, open)
 	PS(mod_user_is_open) = 1;
 
 	zend_try {
-		ret = PS(default_mod)->s_open(&PS(mod_data), save_path, session_name);
+		ret = PS(default_mod)->s_open(&PS(mod_data), save_path, session_name, 0);
 	} zend_catch {
 		PS(session_status) = php_session_none;
 		zend_bailout();
@@ -96,7 +96,7 @@ PHP_METHOD(SessionHandler, read)
 
 	PS_SANITY_CHECK_IS_OPEN;
 
-	if (PS(default_mod)->s_read(&PS(mod_data), key, &val, PS(gc_maxlifetime)) == FAILURE) {
+	if (PS(default_mod)->s_read(&PS(mod_data), key, &val, PS(gc_maxlifetime), 0) == FAILURE) {
 		RETURN_FALSE;
 	}
 
